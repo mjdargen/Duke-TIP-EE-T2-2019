@@ -1,28 +1,36 @@
-#include <LEDMatrixDriver.hpp>
+/*
+  8x8 LED Matrix - MAX7219
+  * Animations using the LED Matrix
+  Michael D'Argenio
 
-// This draw a moving sprite on your LED matrix using the hardware SPI driver Library by Bartosz Bielawski.
-// Example written 16.06.2017 by Marko Oette, www.oette.info
+  You will need to install the LEDControl Library(not installed by default)
+  LEDControl by Eberhard Fahle in Tools -> Manage Libraries
+  https://playground.arduino.cc/Main/LedControl/
 
-// Define the ChipSelect pin for the led matrix (Dont use the SS or MISO pin of your Arduino!)
-// Other pins are Arduino specific SPI pins (MOSI=DIN, SCK=CLK of the LEDMatrix) see https://www.arduino.cc/en/Reference/SPI
-const uint8_t LEDMATRIX_CS_PIN = 9;
 
-// Number of 8x8 segments you are connecting
-const int LEDMATRIX_SEGMENTS = 4;
-const int LEDMATRIX_WIDTH    = LEDMATRIX_SEGMENTS * 8;
+  You should set up the pins as shown below:
+  * Vcc – 5V
+  * GND – GND
+  * DIN – pin 11
+  * CLK – pin 13
+  * CS – pin 9
+*/
 
-// The LEDMatrixDriver class instance
-LEDMatrixDriver lmd(LEDMATRIX_SEGMENTS, LEDMATRIX_CS_PIN);
+/* Include LEDControl Library */
+#include "LedControl.h"
 
-void setup() {
-  // init the display
-  lmd.setEnabled(true);
-  lmd.setIntensity(2);   // 0 = low, 10 = high
-}
+/* we always wait a bit between updates of the display */
+#define DELAY 200
 
-int x=-1, y=0;   // start top left
-bool s = true;  // start with led on
 
+/* LedControl(DIN,CLK,CS,# of LED Matrices */
+LedControl lc=LedControl(11,13,9,1);
+
+/* Here is the data for the animations
+ * 1 corresponds to LED on,
+ * 0 corresponds to LED off
+ * Each bit represents 1 LED in the 8x8 matrix
+*/
 byte a[8]={ B00011000,
             B00100100,
             B00100100,
@@ -77,54 +85,53 @@ byte f[8]={ B00011000,
             B00010100,
             B00010100};
 
-
-const int ANIM_DELAY = 100;
-
-void loop() {
-
-  drawSprite( (byte*)&a, x++, 0, 8, 8 );
-  lmd.display();
-  delay(ANIM_DELAY);
-
-  lmd.clear();
-  drawSprite( (byte*)&b, x++, 0, 8, 8 );
-  lmd.display();
-  delay(ANIM_DELAY);
-
-  lmd.clear();
-  drawSprite( (byte*)&c, x++, 0, 8, 8 );
-  lmd.display();
-  delay(ANIM_DELAY);
-
-  lmd.clear();
-  drawSprite( (byte*)&d, x++, 0, 8, 8 );
-  lmd.display();
-  delay(ANIM_DELAY);
-
-  lmd.clear();
-  drawSprite( (byte*)&e, x++, 0, 8, 8 );
-  lmd.display();
-  delay(ANIM_DELAY);
-
-  lmd.clear();
-  drawSprite( (byte*)&f, x++, 0, 8, 8 );
-  lmd.display();
-  delay(ANIM_DELAY);
-
-  if( x > LEDMATRIX_WIDTH )
-    x= -1;
+void setup() {
+  /* The MAX72XX is in power-saving mode on startup, we have to do a wakeup call */
+  lc.shutdown(0,false);
+  /* Set the brightness to a medium values */
+  lc.setIntensity(0,8);
+  /* and clear the display */
+  lc.clearDisplay(0);
 }
 
-void drawSprite( byte* sprite, int x, int y, int width, int height )
-{
-  byte mask = B10000000;
-  for( int iy = 0; iy < height; iy++ )
-  {
-    for( int ix = 0; ix < width; ix++ )
-    {
-      lmd.setPixel(x + ix, y + iy, (bool)(sprite[iy] & mask ));
-      mask = mask >> 1;
-    }
-    mask = B10000000;
-  }
+void loop() { 
+  sprites();
+}
+
+/*
+ This function will display each one of the 
+ animations one after the other on the matrix. 
+*/
+void sprites() {
+
+  /* loop through and display one animation */
+  for (int i=0; i<8; i++)
+    lc.setRow(0,i,a[i]);
+  delay(DELAY); // delay
+
+  /* loop through and display one animation */
+  for (int i=0; i<8; i++)
+    lc.setRow(0,i,b[i]);
+  delay(DELAY);
+
+  /* loop through and display one animation */
+  for (int i=0; i<8; i++)
+    lc.setRow(0,i,c[i]);
+  delay(DELAY);
+
+  /* loop through and display one animation */
+  for (int i=0; i<8; i++)
+    lc.setRow(0,i,d[i]);
+  delay(DELAY);
+
+  /* loop through and display one animation */
+  for (int i=0; i<8; i++)
+    lc.setRow(0,i,e[i]);
+  delay(DELAY);
+
+  /* loop through and display one animation */
+  for (int i=0; i<8; i++)
+    lc.setRow(0,i,f[i]);
+  delay(DELAY);
+            
 }
