@@ -1,200 +1,130 @@
-/*
-  8x8 LED Matrix - MAX7219
-  * Animations using the LED Matrix
-  Michael D'Argenio
+#include <LEDMatrixDriver.hpp>
 
-  You will need to install the LEDControl Library(not installed by default)
-  LEDControl by Eberhard Fahle in Tools -> Manage Libraries
-  https://playground.arduino.cc/Main/LedControl/
+// This draw a moving sprite on your LED matrix using the hardware SPI driver Library by Bartosz Bielawski.
+// Example written 16.06.2017 by Marko Oette, www.oette.info
 
+// Define the ChipSelect pin for the led matrix (Dont use the SS or MISO pin of your Arduino!)
+// Other pins are Arduino specific SPI pins (MOSI=DIN, SCK=CLK of the LEDMatrix) see https://www.arduino.cc/en/Reference/SPI
+const uint8_t LEDMATRIX_CS_PIN = 9;
 
-  You should set up the pins as shown below:
-  * Vcc – 5V
-  * GND – GND
-  * MOSI – DIN – pin 11
-  * SCK – pin 13
-  * CS – pin 9
-*/
+// Number of 8x8 segments you are connecting
+const int LEDMATRIX_SEGMENTS = 4;
+const int LEDMATRIX_WIDTH    = LEDMATRIX_SEGMENTS * 8;
 
-/* Include LEDControl Library */
-#include "LedControl.h"
-
-
-/* LedControl(DIN,CLK,CS,# of LED Matrices */
-LedControl lc=LedControl(11,13,9,1);
-
-/* we always wait a bit between updates of the display */
-unsigned int delaytime = 200;
+// The LEDMatrixDriver class instance
+LEDMatrixDriver lmd(LEDMATRIX_SEGMENTS, LEDMATRIX_CS_PIN);
 
 void setup() {
-  /* The MAX72XX is in power-saving mode on startup, we have to do a wakeup call */
-  lc.shutdown(0,false);
-  /* Set the brightness to a medium values */
-  lc.setIntensity(0,8);
-  /* and clear the display */
-  lc.clearDisplay(0);
+  // init the display
+  lmd.setEnabled(true);
+  lmd.setIntensity(2);   // 0 = low, 10 = high
 }
 
-/*
- This method will display the characters for the
- word "Arduino" one after the other on the matrix. 
- (you need at least 5x7 leds to see the whole chars)
-*/
-void writeArduinoOnMatrix() {
-  /* here is the data for the characters */
-  byte a[5]={B01111110,
-             B10001000,
-             B10001000,
-             B10001000,
-             B01111110};
-  byte r[5]={B00111110,
-             B00010000,
-             B00100000,
-             B00100000,
-             B00010000};
-  byte d[5]={B00011100,
-             B00100010,
-             B00100010,
-             B00010010,
-             B11111110};
-  byte u[5]={B00111100,
-             B00000010,
-             B00000010,
-             B00000100,
-             B00111110};
-  byte i[5]={B00000000,
-             B00100010,
-             B10111110,
-             B00000010,
-             B00000000};
-  byte n[5]={B00111110,
-             B00010000,
-             B00100000,
-             B00100000,
-             B00011110};
-  byte o[5]={B00011100,
-             B00100010,
-             B00100010,
-             B00100010,
-             B00011100};
+int x=-1, y=0;   // start top left
+bool s = true;  // start with led on
 
-  /* now display them one by one with a small delay */
-  lc.setRow(0,0,a[0]);
-  lc.setRow(0,1,a[1]);
-  lc.setRow(0,2,a[2]);
-  lc.setRow(0,3,a[3]);
-  lc.setRow(0,4,a[4]);
-  delay(delaytime);
-  lc.setRow(0,0,r[0]);
-  lc.setRow(0,1,r[1]);
-  lc.setRow(0,2,r[2]);
-  lc.setRow(0,3,r[3]);
-  lc.setRow(0,4,r[4]);
-  delay(delaytime);
-  lc.setRow(0,0,d[0]);
-  lc.setRow(0,1,d[1]);
-  lc.setRow(0,2,d[2]);
-  lc.setRow(0,3,d[3]);
-  lc.setRow(0,4,d[4]);
-  delay(delaytime);
-  lc.setRow(0,0,u[0]);
-  lc.setRow(0,1,u[1]);
-  lc.setRow(0,2,u[2]);
-  lc.setRow(0,3,u[3]);
-  lc.setRow(0,4,u[4]);
-  delay(delaytime);
-  lc.setRow(0,0,i[0]);
-  lc.setRow(0,1,i[1]);
-  lc.setRow(0,2,i[2]);
-  lc.setRow(0,3,i[3]);
-  lc.setRow(0,4,i[4]);
-  delay(delaytime);
-  lc.setRow(0,0,n[0]);
-  lc.setRow(0,1,n[1]);
-  lc.setRow(0,2,n[2]);
-  lc.setRow(0,3,n[3]);
-  lc.setRow(0,4,n[4]);
-  delay(delaytime);
-  lc.setRow(0,0,o[0]);
-  lc.setRow(0,1,o[1]);
-  lc.setRow(0,2,o[2]);
-  lc.setRow(0,3,o[3]);
-  lc.setRow(0,4,o[4]);
-  delay(delaytime);
-  lc.setRow(0,0,0);
-  lc.setRow(0,1,0);
-  lc.setRow(0,2,0);
-  lc.setRow(0,3,0);
-  lc.setRow(0,4,0);
-  delay(delaytime);
+byte a[8]={ B00011000,
+            B00100100,
+            B00100100,
+            B00011000,
+            B01111110,
+            B00011000,
+            B00100100,
+            B01000010};
+
+byte b[8]={ B00011000,
+            B00100100,
+            B00100100,
+            B00011010,
+            B01111100,
+            B00011000,
+            B01100100,
+            B00000010};
+
+byte c[8]={ B00011000,
+            B00100100,
+            B00100100,
+            B00011010,
+            B00111100,
+            B01011000,
+            B00110100,
+            B00000100};
+
+byte d[8]={ B00011000,
+            B00100100,
+            B00100100,
+            B00011010,
+            B00111100,
+            B01011000,
+            B00011000,
+            B00011000};
+
+byte e[8]={ B00011000,
+            B00100100,
+            B00100100,
+            B00011010,
+            B00111100,
+            B01011000,
+            B00010100,
+            B00010000};
+
+byte f[8]={ B00011000,
+            B00100100,
+            B00100100,
+            B00011000,
+            B00111110,
+            B01011000,
+            B00010100,
+            B00010100};
+
+
+const int ANIM_DELAY = 100;
+
+void loop() {
+
+  drawSprite( (byte*)&a, x++, 0, 8, 8 );
+  lmd.display();
+  delay(ANIM_DELAY);
+
+  lmd.clear();
+  drawSprite( (byte*)&b, x++, 0, 8, 8 );
+  lmd.display();
+  delay(ANIM_DELAY);
+
+  lmd.clear();
+  drawSprite( (byte*)&c, x++, 0, 8, 8 );
+  lmd.display();
+  delay(ANIM_DELAY);
+
+  lmd.clear();
+  drawSprite( (byte*)&d, x++, 0, 8, 8 );
+  lmd.display();
+  delay(ANIM_DELAY);
+
+  lmd.clear();
+  drawSprite( (byte*)&e, x++, 0, 8, 8 );
+  lmd.display();
+  delay(ANIM_DELAY);
+
+  lmd.clear();
+  drawSprite( (byte*)&f, x++, 0, 8, 8 );
+  lmd.display();
+  delay(ANIM_DELAY);
+
+  if( x > LEDMATRIX_WIDTH )
+    x= -1;
 }
 
-/*
-  This function lights up a some Leds in a row.
- The pattern will be repeated on every row.
- The pattern will blink along with the row-number.
- row number 4 (index==3) will blink 4 times etc.
- */
-void rows() {
-  for(int row=0;row<8;row++) {
-    delay(delaytime);
-    lc.setRow(0,row,B10100000);
-    delay(delaytime);
-    lc.setRow(0,row,(byte)0);
-    for(int i=0;i<row;i++) {
-      delay(delaytime);
-      lc.setRow(0,row,B10100000);
-      delay(delaytime);
-      lc.setRow(0,row,(byte)0);
+void drawSprite( byte* sprite, int x, int y, int width, int height )
+{
+  byte mask = B10000000;
+  for( int iy = 0; iy < height; iy++ )
+  {
+    for( int ix = 0; ix < width; ix++ )
+    {
+      lmd.setPixel(x + ix, y + iy, (bool)(sprite[iy] & mask ));
+      mask = mask >> 1;
     }
+    mask = B10000000;
   }
-}
-
-/*
-  This function lights up a some Leds in a column.
- The pattern will be repeated on every column.
- The pattern will blink along with the column-number.
- column number 4 (index==3) will blink 4 times etc.
- */
-void columns() {
-  for(int col=0;col<8;col++) {
-    delay(delaytime);
-    lc.setColumn(0,col,B10100000);
-    delay(delaytime);
-    lc.setColumn(0,col,(byte)0);
-    for(int i=0;i<col;i++) {
-      delay(delaytime);
-      lc.setColumn(0,col,B10100000);
-      delay(delaytime);
-      lc.setColumn(0,col,(byte)0);
-    }
-  }
-}
-
-/* 
- This function will light up every Led on the matrix.
- The led will blink along with the row-number.
- row number 4 (index==3) will blink 4 times etc.
- */
-void single() {
-  for(int row=0;row<8;row++) {
-    for(int col=0;col<8;col++) {
-      delay(delaytime);
-      lc.setLed(0,row,col,true);
-      delay(delaytime);
-      for(int i=0;i<col;i++) {
-        lc.setLed(0,row,col,false);
-        delay(delaytime);
-        lc.setLed(0,row,col,true);
-        delay(delaytime);
-      }
-    }
-  }
-}
-
-void loop() { 
-  writeArduinoOnMatrix();
-  rows();
-  columns();
-  single();
 }
