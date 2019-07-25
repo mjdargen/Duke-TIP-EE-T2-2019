@@ -1,5 +1,5 @@
 **My course survey:**  
-● This helps me improve my teaching methods and improve the course for next term.  
+● This helps me improve my teaching methods and improve the course in the future.  
 ● This is an anonymous survey.  
 https://forms.gle/WFkDn9jsw94bUqS47  
   
