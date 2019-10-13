@@ -4,7 +4,7 @@ Arduino Project Hub
 https://create.arduino.cc/projecthub
 
 Arduino Instructables
-https://www.instructables.com/id/Arduino-Projects/
+https://www.instructables.com/circuits/arduino/projects/
 
 Circuit Digest Projects
 https://circuitdigest.com/arduino-projects
